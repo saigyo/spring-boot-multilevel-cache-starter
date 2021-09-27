@@ -24,6 +24,7 @@
 
 package io.github.suppie.spring.cache;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -38,6 +39,7 @@ import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -48,7 +50,11 @@ import org.springframework.boot.autoconfigure.cache.CacheAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.Cache;
+import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.RedisSerializationContext;
+import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -72,6 +78,8 @@ class MultiLevelCacheTest {
   @Autowired MultiLevelCacheManager cacheManager;
 
   @Autowired RedisConnection redisConnection;
+
+  @Autowired RedisTemplate redisTemplate;
 
   @ParameterizedTest
   @MethodSource("operations")
@@ -181,5 +189,18 @@ class MultiLevelCacheTest {
   @FunctionalInterface
   interface TrieConsumer<A, B, C> {
     void accept(A a, B b, C c) throws Throwable;
+  }
+
+  @Test
+  void multiLevelCacheConfigurationInheritsValueSerializerFromRedisTemplateTest() {
+    RedisSerializer<?> valueSerializer = redisTemplate.getValueSerializer();
+    assertThat(valueSerializer).isNotNull();
+
+    MultiLevelCache cache = (MultiLevelCache) cacheManager.getCache("valueSerializerTest");
+    RedisCacheConfiguration cacheConfiguration = cache.getCacheConfiguration();
+
+    assertThat(cacheConfiguration.getValueSerializationPair())
+        .usingRecursiveComparison()
+        .isEqualTo(RedisSerializationContext.SerializationPair.fromSerializer(valueSerializer));
   }
 }
