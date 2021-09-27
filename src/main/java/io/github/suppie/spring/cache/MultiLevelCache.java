@@ -38,8 +38,11 @@ import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.springframework.cache.support.SimpleValueWrapper;
 import org.springframework.data.redis.cache.RedisCache;
+import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheWriter;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.RedisSerializationContext;
+import org.springframework.data.redis.serializer.RedisSerializer;
 
 /**
  * Multi-level cache implementation
@@ -97,7 +100,7 @@ public class MultiLevelCache extends RedisCache {
       RedisTemplate<Object, Object> redisTemplate,
       Cache<Object, Object> localCache,
       CircuitBreaker cacheCircuitBreaker) {
-    super(name, redisCacheWriter, properties.toRedisCacheConfiguration());
+    super(name, redisCacheWriter, createRedisCacheConfiguration(properties, redisTemplate));
 
     this.properties = properties;
     this.redisTemplate = redisTemplate;
@@ -108,6 +111,25 @@ public class MultiLevelCache extends RedisCache {
             .expireAfterAccess(LOCKS_CACHE_EXPIRE_AFTER_ACCESS)
             .build();
     this.cacheCircuitBreaker = cacheCircuitBreaker;
+  }
+
+  /**
+   * A RedisCacheConfiguration is created from the given Properties, and configured with the
+   * ValueSerializer from the RedisTemplate.
+   *
+   * @param properties cache configuration properties
+   * @param redisTemplate Redis-Template
+   * @return RedisCacheConfiguration
+   */
+  static RedisCacheConfiguration createRedisCacheConfiguration(
+      MultiLevelCacheConfigurationProperties properties,
+      RedisTemplate<Object, Object> redisTemplate) {
+    RedisCacheConfiguration configuration = properties.toRedisCacheConfiguration();
+    RedisSerializer<?> valueSerializer = redisTemplate.getValueSerializer();
+    configuration =
+        configuration.serializeValuesWith(
+            RedisSerializationContext.SerializationPair.fromSerializer(valueSerializer));
+    return configuration;
   }
 
   // Workarounds for tests
