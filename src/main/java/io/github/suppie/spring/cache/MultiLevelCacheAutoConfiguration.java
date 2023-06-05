@@ -32,6 +32,7 @@ import io.micrometer.core.instrument.binder.MeterBinder;
 import io.micrometer.core.instrument.binder.cache.CaffeineCacheMetrics;
 import java.time.Duration;
 import java.util.Objects;
+import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.actuate.metrics.cache.CacheMeterBinderProvider;
@@ -112,6 +113,12 @@ public class MultiLevelCacheAutoConfiguration {
     return (cache, tags) -> new CaffeineCacheMetrics(cache.getLocalCache(), cache.getName(), tags);
   }
 
+  @Bean
+  @ConditionalOnMissingBean
+  public Supplier<RedisMessageListenerContainer> redisMessageListenerContainerSupplier() {
+    return RedisMessageListenerContainer::new;
+  }
+
   /**
    * @param cacheProperties for multi-level cache
    * @param multiLevelCacheRedisTemplate to receive messages about evicted entries
@@ -122,8 +129,9 @@ public class MultiLevelCacheAutoConfiguration {
   public RedisMessageListenerContainer multiLevelCacheRedisMessageListenerContainer(
       MultiLevelCacheConfigurationProperties cacheProperties,
       RedisTemplate<Object, Object> multiLevelCacheRedisTemplate,
-      MultiLevelCacheManager cacheManager) {
-    RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+      MultiLevelCacheManager cacheManager,
+      Supplier<RedisMessageListenerContainer> redisMessageListenerContainerSupplier) {
+    RedisMessageListenerContainer container = redisMessageListenerContainerSupplier.get();
     container.setConnectionFactory(
         Objects.requireNonNull(multiLevelCacheRedisTemplate.getConnectionFactory()));
     container.addMessageListener(

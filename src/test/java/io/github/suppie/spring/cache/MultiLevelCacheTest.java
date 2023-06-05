@@ -55,6 +55,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 @ActiveProfiles("test")
 @SpringBootTest(
     classes = {
+      MultiLevelCacheTestConfiguration.class,
       MultiLevelCacheAutoConfiguration.class,
       RedisAutoConfiguration.class,
       CacheAutoConfiguration.class

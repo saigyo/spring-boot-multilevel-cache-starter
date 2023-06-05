@@ -39,10 +39,12 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 
 class MultiLevelCacheAutoConfigurationTest {
+
   private final ApplicationContextRunner runner =
       new ApplicationContextRunner()
           .withConfiguration(
               UserConfigurations.of(
+                  MultiLevelCacheTestConfiguration.class,
                   MultiLevelCacheAutoConfiguration.class,
                   RedisAutoConfiguration.class,
                   CacheAutoConfiguration.class));
