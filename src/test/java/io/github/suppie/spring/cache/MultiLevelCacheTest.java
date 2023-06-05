@@ -24,6 +24,9 @@
 
 package io.github.suppie.spring.cache;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker.State;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig.SlidingWindowType;
@@ -34,7 +37,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.awaitility.Awaitility;
-import org.checkerframework.checker.units.qual.A;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -46,6 +48,7 @@ import org.springframework.boot.autoconfigure.cache.CacheAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.Cache;
+import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -68,12 +71,16 @@ class MultiLevelCacheTest {
 
   @Autowired MultiLevelCacheManager cacheManager;
 
+  @Autowired RedisConnection redisConnection;
+
   @ParameterizedTest
   @MethodSource("operations")
   void circuitBreakerTest(TrieConsumer<String, MultiLevelCacheManager, MultiLevelCache> consumer)
       throws Throwable {
     final String key = "circuitBreakerTest" + COUNTER.incrementAndGet();
     final CircuitBreakerProperties cbp = cacheManager.getProperties().getCircuitBreaker();
+
+    when(redisConnection.get(any())).thenThrow(RuntimeException.class);
 
     MultiLevelCache cache = (MultiLevelCache) cacheManager.getCache(key);
     Assertions.assertNotNull(cache, "Cache should be automatically created upon request");
