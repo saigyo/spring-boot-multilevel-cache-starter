@@ -35,7 +35,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-redis:2.5.3'
     implementation 'org.springframework.boot:spring-boot-actuator:2.5.3'
 
-    implementation 'io.micrometer:micrometer-core:1.7.2'
+    implementation 'io.micrometer:micrometer-core:1.9.11'
 
     implementation 'com.github.ben-manes.caffeine:caffeine:2.9.2'
     implementation 'io.github.resilience4j:resilience4j-circuitbreaker:1.7.1'
