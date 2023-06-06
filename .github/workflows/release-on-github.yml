@@ -1,0 +1,55 @@
+# This workflow will build a package using Gradle and then publish it to GitHub packages when a release is created
+# For more information see: https://github.com/actions/setup-java/blob/main/docs/advanced-usage.md#publishing-using-gradle
+
+name: Release on GitHub
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v3
+        with:
+          java-version: '8'
+          distribution: 'adopt'
+
+      - name: Configure Git user
+        run: |
+          git config user.email "saigyo@kaixo.de"
+          git config user.name "GitHub Actions"
+
+      - name: Grant execute permission for gradle
+        run: chmod +x gradlew
+
+      - name: Generate release version
+        run: date +"%Y.%m.%d.%H.%M.%S" > version.txt
+        env:
+          TZ: Europe/Berlin
+
+      - name: Build with Gradle
+        run: ./gradlew -Pversion=`cat version.txt` build --info
+
+      - name: Publish to GitHub Packages
+        run: ./gradlew -Pversion=`cat version.txt` publish  --info
+        env:
+          GITHUB_PUBLISH_PACKAGES_TOKEN: ${{ github.token }}
+
+      - name: Tag last commit with version
+        run: |
+          git tag `cat version.txt`
+          git push origin `cat version.txt`
