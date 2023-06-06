@@ -12,7 +12,7 @@ plugins {
     id 'org.springframework.boot' version '2.7.12'
 
     // Publishing
-    id 'com.vanniktech.maven.publish' version '0.17.0'
+    id 'maven-publish'
 
     // Utility
     id 'jacoco'
@@ -120,17 +120,24 @@ allprojects {
 publishing {
     repositories {
         maven {
-            def releasesRepoUrl = "$buildDir/publications/releases"
-            def snapshotsRepoUrl = "$buildDir/publications/snapshots"
-            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+            name 'github-saigyo'
+            url 'https://maven.pkg.github.com/saigyo/spring-boot-multilevel-cache-starter'
+            credentials(HttpHeaderCredentials) {
+                name = 'Authorization'
+                value = 'Bearer ' + System.getenv('GITHUB_PUBLISH_PACKAGES_TOKEN')
+            }
+            authentication {
+                register('header', HttpHeaderAuthentication)
+            }
         }
     }
-}
+    publications {
+        maven(MavenPublication) {
+            groupId = project.group
+            artifactId = 'spring-boot-multilevel-cache-starter'
+            version = project.version
 
-signing {
-    if (project.hasProperty('SIGNING_PRIVATE_KEY') && project.hasProperty('SIGNING_PASSWORD')) {
-        println 'Found signing credentials. Signing...'
-        useInMemoryPgpKeys(project.getProperty('SIGNING_PRIVATE_KEY'), project.getProperty('SIGNING_PASSWORD'))
-        println 'Used useInMemoryPgpKeys()'
+            from components.java
+        }
     }
 }
