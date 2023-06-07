@@ -62,7 +62,9 @@ public class MultiLevelCacheConfigurationProperties {
             .disableCachingNullValues()
             .entryTtl(timeToLive);
 
-    if (useKeyPrefix) configuration.prefixCacheNameWith(keyPrefix);
+    if (useKeyPrefix) {
+      configuration = configuration.prefixCacheNameWith(keyPrefix);
+    }
 
     return configuration;
   }
